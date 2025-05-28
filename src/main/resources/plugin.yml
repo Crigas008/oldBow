@@ -1,0 +1,5 @@
+name: OldBow
+main: me.crigas.oldbow.OldBow
+version: 1.0
+api-version: 1.16
+author: crigas
