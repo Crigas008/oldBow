@@ -23,46 +23,51 @@ public class BowShoot implements Listener {
                 AbstractArrow originalArrow = (AbstractArrow) event.getProjectile();
                 event.getProjectile().remove();
 
-                if (!consumeArrow(player, originalArrow)) {
+                if (!consumeArrow(player, originalArrow, event.getBow())) {
 
                     return;
                 }
 
                 Vector direction = player.getLocation().getDirection().normalize();
-                Vector behind = direction.clone().multiply(-3.1f);
+                Vector behind = direction.clone().multiply(-2f);
                 Vector spawnPos = player.getLocation().toVector().add(behind).add(new Vector(0, 1, 0));
 
                 AbstractArrow arrow;
                 if (originalArrow instanceof SpectralArrow) {
-                    arrow = player.getWorld().spawn(spawnPos.toLocation(player.getWorld()), SpectralArrow.class);
-                    Vector velocity = player.getLocation().toVector().add(new Vector(0, 1, 0)).subtract(spawnPos).normalize().multiply(1.5f);
-                    arrow.setVelocity(velocity);
+                    arrow = player.getWorld().spawnArrow(
+                            spawnPos.toLocation(player.getWorld()),
+                            player.getLocation().toVector().add(new Vector(0, 1.5f, 0)).subtract(spawnPos).normalize(),
+                            0.8f,
+                            0f,
+                            SpectralArrow.class
+                    );
                 } else {
                     arrow = player.getWorld().spawnArrow(
                             spawnPos.toLocation(player.getWorld()),
-                            player.getLocation().toVector().add(new Vector(0, 1, 0)).subtract(spawnPos).normalize().multiply(1.5f),
-                            1f,
+                            player.getLocation().toVector().add(new Vector(0, 1.5f, 0)).subtract(spawnPos).normalize(),
+                            0.8f,
                             0f
                     );
                     if (originalArrow instanceof Arrow) {
                         ((Arrow) arrow).setBasePotionData(((Arrow) originalArrow).getBasePotionData());
-                        for (PotionEffect effect : ((Arrow) originalArrow).getCustomEffects()) {
-                            ((Arrow) arrow).addCustomEffect(effect, true);
-                        }
                     }
                 }
-
                 arrow.setCritical(originalArrow.isCritical());
                 arrow.setDamage(originalArrow.getDamage());
                 arrow.setPierceLevel(originalArrow.getPierceLevel());
                 arrow.setKnockbackStrength(originalArrow.getKnockbackStrength());
                 arrow.setShooter(player);
-                arrow.setPickupStatus(AbstractArrow.PickupStatus.DISALLOWED);
+                if (event.getBow() != null && event.getBow().containsEnchantment(org.bukkit.enchantments.Enchantment.ARROW_INFINITE)) {
+                    arrow.setPickupStatus(AbstractArrow.PickupStatus.DISALLOWED);
+                }
+                else {
+                    arrow.setPickupStatus(originalArrow.getPickupStatus());
+                }
             }
         }
     }
 
-    private boolean consumeArrow(Player player, AbstractArrow arrow) {
+    private boolean consumeArrow(Player player, AbstractArrow arrow, ItemStack bow) {
         if (player.getGameMode() == GameMode.CREATIVE) {
             return true;
         }
@@ -79,6 +84,10 @@ public class BowShoot implements Listener {
                 arrowType = Material.TIPPED_ARROW;
                 potionType = tipped.getBasePotionData().getType();
                 customEffects = tipped.getCustomEffects();
+            } else {
+                if (bow != null && bow.containsEnchantment(org.bukkit.enchantments.Enchantment.ARROW_INFINITE)) {
+                    return true;
+                }
             }
         }
 
